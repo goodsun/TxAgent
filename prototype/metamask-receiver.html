@@ -262,7 +262,8 @@
         async function loadFromClipboard() {
             try {
                 const clipboardText = await navigator.clipboard.readText();
-                const decoded = JSON.parse(atob(clipboardText));
+                // Base64デコード（UTF-8対応）
+                const decoded = JSON.parse(decodeURIComponent(escape(atob(clipboardText))));
                 transactionData = decoded;
 
                 // ダイジェストを再計算
