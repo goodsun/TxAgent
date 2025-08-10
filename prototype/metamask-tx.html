@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>トランザクション確認 - MetaMask</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            border-radius: 12px 12px 0 0;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            color: #333;
+        }
+        .content {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .label {
+            color: #666;
+            font-size: 14px;
+        }
+        .value {
+            font-weight: bold;
+            color: #333;
+        }
+        .digest-section {
+            background: #fffbf0;
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .digest-code {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #ff9800;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #c00;
+            display: none;
+        }
+        .button-container {
+            background: white;
+            border-radius: 0 0 12px 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+        }
+        .button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .reject {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .approve {
+            background: #4CAF50;
+            color: white;
+        }
+        .approve:hover {
+            background: #45a049;
+        }
+        .reject:hover {
+            background: #e0e0e0;
+        }
+        .not-metamask {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .gas-estimate {
+            background: #e3f2fd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🦊</div>
+            <h1>トランザクション確認</h1>
+        </div>
+
+        <div id="notMetaMask" class="not-metamask" style="display: none;">
+            ⚠️ このページはMetaMaskブラウザで開いてください
+        </div>
+
+        <div id="mainContent" style="display: none;">
+            <div class="content">
+                <div class="info-section">
+                    <h2 style="margin-top: 0;">📋 トランザクション内容</h2>
+                    <div class="info-row">
+                        <span class="label">操作</span>
+                        <span class="value" id="action"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">アイテム</span>
+                        <span class="value" id="item"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">価格</span>
+                        <span class="value" id="price"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">販売者</span>
+                        <span class="value" id="seller"></span>
+                    </div>
+                </div>
+
+                <div class="digest-section">
+                    <p style="margin: 0;">🔐 セキュリティ確認コード</p>
+                    <div class="digest-code" id="digestCode"></div>
+                    <p style="margin: 0; font-size: 12px; color: #666;">
+                        元の画面と同じコードか確認してください
+                    </p>
+                </div>
+
+                <div class="gas-estimate">
+                    ⛽ ガス代（見積もり）: 約 0.003 ETH<br>
+                    💰 合計: 約 <span id="totalCost">0.103</span> ETH
+                </div>
+
+                <div class="warning" id="warning">
+                    ⚠️ 確認コードが一致しない場合は、絶対に承認しないでください
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button class="button reject" onclick="reject()">拒否</button>
+                <button class="button approve" onclick="approve()">承認する</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let transactionData = null;
+
+        // URLパラメータからデータを取得
+        function loadTransactionData() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const encodedData = params.get('data');
+                
+                if (!encodedData) {
+                    throw new Error('トランザクションデータがありません');
+                }
+
+                // Base64デコード（UTF-8対応）
+                const jsonString = decodeURIComponent(escape(atob(encodedData)));
+                const data = JSON.parse(jsonString);
+                
+                transactionData = data;
+
+                // データを画面に表示
+                document.getElementById('action').textContent = data.readable.action;
+                document.getElementById('item').textContent = data.readable.item;
+                document.getElementById('price').textContent = data.readable.price;
+                document.getElementById('seller').textContent = data.readable.seller;
+                document.getElementById('digestCode').textContent = data.readable.digest;
+
+                // 合計金額計算（仮）
+                const ethPrice = parseFloat(data.readable.price) || 0;
+                const totalCost = ethPrice + 0.003; // ガス代込み
+                document.getElementById('totalCost').textContent = totalCost.toFixed(3);
+
+            } catch (error) {
+                console.error('データの読み込みに失敗:', error);
+                alert('エラー: ' + error.message);
+            }
+        }
+
+        // MetaMaskチェック
+        function checkMetaMask() {
+            if (window.ethereum && window.ethereum.isMetaMask) {
+                document.getElementById('mainContent').style.display = 'block';
+                document.getElementById('notMetaMask').style.display = 'none';
+                return true;
+            } else {
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('notMetaMask').style.display = 'block';
+                return false;
+            }
+        }
+
+        // 承認処理
+        async function approve() {
+            if (!transactionData) {
+                alert('トランザクションデータがありません');
+                return;
+            }
+
+            try {
+                // MetaMaskでトランザクション送信
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                
+                const txParams = {
+                    from: accounts[0],
+                    to: transactionData.tx.to,
+                    value: transactionData.tx.value,
+                    data: transactionData.tx.data
+                };
+
+                const txHash = await ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [txParams]
+                });
+
+                alert(`✅ トランザクション送信完了！\n\nトランザクションハッシュ:\n${txHash}`);
+                
+                // 元のサイトに戻る案内
+                setTimeout(() => {
+                    if (confirm('元のサイトに戻りますか？')) {
+                        window.history.back();
+                    }
+                }, 1000);
+
+            } catch (error) {
+                console.error('トランザクションエラー:', error);
+                alert('❌ エラー: ' + error.message);
+            }
+        }
+
+        // 拒否処理
+        function reject() {
+            if (confirm('トランザクションを拒否しますか？')) {
+                alert('トランザクションが拒否されました');
+                window.history.back();
+            }
+        }
+
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkMetaMask()) {
+                loadTransactionData();
+            }
+        });
+    </script>
+</body>
+</html>
