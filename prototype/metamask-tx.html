@@ -202,25 +202,27 @@
                     throw new Error('トランザクションデータがありません');
                 }
 
-                // Base64デコード
+                // シンプルなBase64デコード
                 let data;
                 try {
-                    // デコード
-                    const decoded = decodeURIComponent(atob(encodedData).split('').map((c) => {
-                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                    }).join(''));
-                    data = JSON.parse(decoded);
+                    const jsonString = atob(encodedData);
+                    data = JSON.parse(jsonString);
                 } catch (e) {
                     throw new Error('データのデコードに失敗しました: ' + e.message);
                 }
                 
                 transactionData = data;
 
-                // データを画面に表示
-                document.getElementById('action').textContent = data.readable.action;
+                // データを画面に表示（日本語に変換）
+                const actionMap = {
+                    'NFT Purchase': 'NFT購入',
+                    'Token Swap': 'トークンスワップ',
+                    'Token Transfer': 'トークン送信'
+                };
+                document.getElementById('action').textContent = actionMap[data.readable.action] || data.readable.action;
                 document.getElementById('item').textContent = data.readable.item;
                 document.getElementById('price').textContent = data.readable.price;
-                document.getElementById('seller').textContent = data.readable.seller;
+                document.getElementById('seller').textContent = data.readable.seller === 'Artist Yamada' ? 'アーティスト山田' : data.readable.seller;
                 document.getElementById('digestCode').textContent = data.readable.digest;
 
                 // 合計金額計算（仮）

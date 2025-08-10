@@ -201,20 +201,17 @@
                     value: "0x16345785d8a0000" // 0.1 ETH in wei
                 },
                 readable: {
-                    action: "NFT購入",
+                    action: "NFT Purchase",
                     item: "Cool Art #1234",
                     price: "0.1 ETH",
-                    seller: "アーティスト山田",
+                    seller: "Artist Yamada",
                     digest: digest
                 }
             };
 
-            // Base64エンコード（URLセーフな方法）
+            // シンプルなBase64エンコード
             const jsonString = JSON.stringify(txData);
-            // エンコード
-            const encoded = btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-                return String.fromCharCode('0x' + p1);
-            }));
+            const encoded = btoa(jsonString);
 
             // MetaMaskで開くURL生成
             // 現在のパスを取得して適切なURLを生成
