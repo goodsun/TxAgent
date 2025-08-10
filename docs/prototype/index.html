@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMask Clipboard Bridge - プロトタイプ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .nft-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .nft-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+        }
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .button {
+            width: 100%;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .digest-display {
+            background: #f0f0f0;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        .digest-code {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #2196F3;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .metamask-preview {
+            background: #f6f6f6;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        .metamask-header {
+            font-weight: bold;
+            color: #f6851b;
+            margin-bottom: 10px;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦊 NFTマーケットプレイス</h1>
+        
+        <div class="nft-card">
+            <div class="nft-image">🎨</div>
+            <h3>Cool Art #1234</h3>
+            <p>作者: アーティスト山田</p>
+            <p class="price">0.1 ETH</p>
+            <button class="button" onclick="purchaseNFT()">購入する</button>
+        </div>
+
+        <div class="digest-display" id="digestDisplay">
+            <h3>🔐 確認コード</h3>
+            <div class="digest-code" id="digestCode"></div>
+            <p>このコードをMetaMaskで確認してください</p>
+            <button class="button" onclick="proceedToMetaMask()">MetaMaskへ進む</button>
+        </div>
+
+        <div class="status success" id="successStatus">
+            ✅ クリップボードにコピーしました！MetaMaskで確認してください。
+        </div>
+
+        <div class="status error" id="errorStatus">
+            ❌ エラーが発生しました。
+        </div>
+
+        <div class="metamask-preview" id="metamaskPreview">
+            <div class="metamask-header">📋 クリップボードの内容（デバッグ用）</div>
+            <pre id="clipboardContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        // シンプルなダイジェスト生成（実際の実装ではSHA256を使用）
+        function generateDigest(to, data) {
+            const combined = to + data;
+            let hash = 0;
+            for (let i = 0; i < combined.length; i++) {
+                const char = combined.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(36).toUpperCase().slice(0, 6).padStart(6, '0');
+        }
+
+        async function purchaseNFT() {
+            // NFTマーケットコントラクトのアドレス（例）
+            const contractAddress = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
+            
+            // NFT購入のcalldata（例：purchase(uint256 tokenId)）
+            const calldata = "0xa9059cbb" + 
+                           "0000000000000000000000001234567890abcdef1234567890abcdef12345678" +
+                           "00000000000000000000000000000000000000000000000000000000000004d2";
+
+            // ダイジェスト生成
+            const digest = generateDigest(contractAddress, calldata);
+
+            // トランザクションデータ作成
+            const txData = {
+                version: "1.0",
+                tx: {
+                    to: contractAddress,
+                    data: calldata,
+                    value: "0x16345785d8a0000" // 0.1 ETH in wei
+                },
+                readable: {
+                    action: "NFT購入",
+                    targetContract: "CoolArt NFT",
+                    summary: "Cool Art #1234 を購入",
+                    details: {
+                        tokenId: "1234",
+                        tokenName: "Cool Art #1234",
+                        price: "0.1 ETH",
+                        seller: "アーティスト山田"
+                    }
+                },
+                security: {
+                    origin: window.location.origin,
+                    timestamp: Date.now(),
+                    chainId: 1,
+                    digest: digest
+                }
+            };
+
+            // Base64エンコード
+            const encoded = btoa(JSON.stringify(txData));
+
+            // 確認コード表示
+            document.getElementById('digestCode').textContent = digest;
+            document.getElementById('digestDisplay').style.display = 'block';
+
+            // デバッグ用：クリップボード内容表示
+            document.getElementById('clipboardContent').textContent = JSON.stringify(txData, null, 2);
+            document.getElementById('metamaskPreview').style.display = 'block';
+
+            // グローバル変数に保存（次の関数で使用）
+            window.encodedTxData = encoded;
+        }
+
+        async function proceedToMetaMask() {
+            try {
+                // クリップボードにコピー
+                await navigator.clipboard.writeText(window.encodedTxData);
+                
+                // 成功メッセージ表示
+                document.getElementById('successStatus').style.display = 'block';
+                
+                // MetaMaskへのディープリンク（実際の実装では適切なスキームを使用）
+                setTimeout(() => {
+                    // モバイルの場合
+                    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                        window.location.href = 'metamask://transaction';
+                    } else {
+                        alert('モバイルデバイスでMetaMaskアプリを開いてください。\n\n確認コード: ' + document.getElementById('digestCode').textContent);
+                    }
+                }, 1000);
+                
+            } catch (err) {
+                console.error('クリップボードへのコピーに失敗:', err);
+                document.getElementById('errorStatus').style.display = 'block';
+                document.getElementById('errorStatus').textContent = '❌ クリップボードへのコピーに失敗しました: ' + err.message;
+            }
+        }
+
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            // HTTPS以外でのクリップボードAPI使用に関する警告
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                alert('注意: クリップボードAPIはHTTPS環境でのみ動作します。');
+            }
+        });
+    </script>
+</body>
+</html>
