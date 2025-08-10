@@ -209,11 +209,12 @@
                 }
             };
 
-            // Base64エンコード（日本語を含むため、UTF-8エンコードを経由）
+            // Base64エンコード（URLセーフな方法）
             const jsonString = JSON.stringify(txData);
-            // UTF-8文字列を正しくBase64エンコード
-            const utf8Bytes = new TextEncoder().encode(jsonString);
-            const encoded = btoa(String.fromCharCode(...utf8Bytes));
+            // エンコード
+            const encoded = btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+                return String.fromCharCode('0x' + p1);
+            }));
 
             // MetaMaskで開くURL生成
             // 現在のパスを取得して適切なURLを生成
