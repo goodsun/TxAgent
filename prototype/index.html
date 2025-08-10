@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MetaMask Clipboard Bridge - プロトタイプV3</title>
+    <title>MetaMask Clipboard Bridge - プロトタイプ</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -130,7 +130,23 @@
             <h3>🔐 確認コード</h3>
             <div class="digest-code" id="digestCode"></div>
             <p>このコードをMetaMaskで確認してください</p>
-            <button class="button" onclick="proceedToMetaMask()">MetaMaskへ進む</button>
+            <button class="button" onclick="proceedToMetaMask()">コピーしてMetaMaskへ進む</button>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; font-size: 14px;">
+                <p style="margin: 0 0 10px 0;"><strong>📱 モバイルの場合：</strong></p>
+                <ol style="margin: 5px 0; padding-left: 20px;">
+                    <li>上のボタンをタップ（データがコピーされます）</li>
+                    <li>MetaMaskアプリを開く</li>
+                    <li>MetaMaskで「貼り付け」して確認</li>
+                </ol>
+                
+                <p style="margin: 15px 0 10px 0;"><strong>💻 デモ用（PC）：</strong></p>
+                <ol style="margin: 5px 0; padding-left: 20px;">
+                    <li>上のボタンをクリック</li>
+                    <li><a href="metamask-receiver.html" target="_blank" style="color: #1976d2;">こちらのMetaMask確認画面</a>を開く</li>
+                    <li>自動的にデータが読み込まれます</li>
+                </ol>
+            </div>
         </div>
 
         <div class="status success" id="successStatus">
