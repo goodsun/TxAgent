@@ -203,8 +203,21 @@
                 }
 
                 // Base64デコード（UTF-8対応）
-                const jsonString = decodeURIComponent(escape(atob(encodedData)));
-                const data = JSON.parse(jsonString);
+                let data;
+                try {
+                    // Base64デコード
+                    const binaryString = atob(encodedData);
+                    // バイナリ文字列をUint8Arrayに変換
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    // UTF-8デコード
+                    const jsonString = new TextDecoder().decode(bytes);
+                    data = JSON.parse(jsonString);
+                } catch (e) {
+                    throw new Error('データのデコードに失敗しました: ' + e.message);
+                }
                 
                 transactionData = data;
 

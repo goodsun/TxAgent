@@ -211,10 +211,15 @@
 
             // Base64エンコード（日本語を含むため、UTF-8エンコードを経由）
             const jsonString = JSON.stringify(txData);
-            const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+            // UTF-8文字列を正しくBase64エンコード
+            const utf8Bytes = new TextEncoder().encode(jsonString);
+            const encoded = btoa(String.fromCharCode(...utf8Bytes));
 
             // MetaMaskで開くURL生成
-            const url = `${window.location.origin}/metamask-tx.html?data=${encoded}`;
+            // 現在のパスを取得して適切なURLを生成
+            const currentPath = window.location.pathname;
+            const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            const url = `${window.location.origin}${basePath}/metamask-tx.html?data=${encoded}`;
             
             // URLをクリップボードにコピー
             try {
@@ -235,6 +240,25 @@
 
             // グローバル変数に保存
             window.metamaskURL = url;
+
+            // モバイルの場合、MetaMaskアプリを開く試み
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                setTimeout(() => {
+                    // MetaMaskアプリを開く（ディープリンク）
+                    window.location.href = 'metamask://';
+                    
+                    // フォールバック：アプリストアへ
+                    setTimeout(() => {
+                        if (confirm('MetaMaskアプリが開きませんでした。\nアプリストアを開きますか？')) {
+                            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                window.location.href = 'https://apps.apple.com/app/metamask/id1438144202';
+                            } else {
+                                window.location.href = 'https://play.google.com/store/apps/details?id=io.metamask';
+                            }
+                        }
+                    }, 2000);
+                }, 1000);
+            }
         }
 
         async function copyURL() {
